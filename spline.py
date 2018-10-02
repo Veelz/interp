@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+#-*- coding: UTF-8 -*-
+
 import numpy as np
 from numpy import pi
 import matplotlib.pyplot as plt
@@ -6,7 +9,7 @@ import matplotlib.pyplot as plt
 class Spline:
     def __init__(self):
         pass
-    
+
     def fit(self, knots, values, d0, dn):
         """Fit spline to given values known in knots.
 
@@ -14,7 +17,7 @@ class Spline:
         knots -- knots
         values -- given values
         d0 -- derivative in knots[0]
-        dn -- derivative in knots[n] 
+        dn -- derivative in knots[n]
         """
         self.knots = np.array(knots)
         self.n = len(knots)
@@ -34,7 +37,7 @@ class Spline:
         Y[1 : self.n - 1] = [3.0 / h * (self.values[i + 2] - self.values[i]) for i in range(self.n - 2)]
         Y[self.n - 1] = dn
 
-        # solve the linear system to find the derivatives vector D 
+        # solve the linear system to find the derivatives vector D
         D = np.linalg.solve(T, Y)
         # compute the coefficients in matrix form
         s = np.array([
@@ -66,16 +69,6 @@ class Spline:
             (knot - self.knots[i]) ** 3,
         ])
         return x_i.dot(self.A[i])
-    
-    def valuesx(self, x):
-        """Compute values in given knots.
-
-        Keyword arguments:
-        knots -- given knots, must be in interval [x[0], ..., x[n]]
-        """
-        if self.A is None:
-            return None
-        return [self.value(value) for value in x]
 
 
 if __name__ == "__main__":
@@ -83,7 +76,9 @@ if __name__ == "__main__":
     values = knots * np.sin(knots) + np.log(knots + 1)
     d = np.divide(1, (knots + 1)) + np.sin(knots) + knots * np.cos(knots)
     x = np.arange(0.0, 8 * pi, 0.05)
-    f = Spline().fit(knots, values, d[0], d[-1]).valuesx(x)
+    spl = Spline().fit(knots, values, d[0], d[-1])
+    f = [spl.value(e) for e in x]
+
     true_values = x * np.sin(x) + np.log(x + 1)
     SSE = np.sum([(f[i] - true_values[i]) ** 2 for i in range(len(x))])
 
@@ -92,7 +87,7 @@ if __name__ == "__main__":
     legend1 = plt.legend(handles=[line1], loc=1)
     ax = plt.gca().add_artist(legend1)
     plt.legend(handles=[line2], loc=4)
-    
+
     plt.grid(True)
     plt.xlabel("Сумма квадратов отклонений SSE=%.5f" % SSE)
     plt.show()

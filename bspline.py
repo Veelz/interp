@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+#-*- coding: UTF-8 -*-
+
 import numpy as np
 from numpy import pi
 import matplotlib.pyplot as plt
@@ -26,22 +29,30 @@ class CubicBSpline:
             vec = np.array([1, t, t ** 2, t ** 3])
             return self.T[i].dot(vec)
 
-    def base_func0(self, points):
+    def __base_func0(self, points):
         return np.array([self.b_spline_value(x) for x in points])
 
-    def base_func(self, i, points):
+    def __base_func(self, i, points):
         if i == 0:
-            return self.base_func0(points)
+            return self.__base_func0(points)
         else:
-            return self.base_func0(np.array(points) - i)
+            return self.__base_func0(np.array(points) - i)
 
     def fit(self, knots, values, d0, dn):
+        """Fit spline to given values known in knots.
+
+        Keyword arguments:
+        knots -- knots
+        values -- given values
+        d0 -- derivative in knots[0]
+        dn -- derivative in knots[n]
+        """
         self.knots_x = knots
         self.h = self.knots_x[1] - self.knots[0]
         # expand knots with additional knots.
         n = len(knots) + 2
         # coefficients vector in knots
-        b = self.base_func(0, np.arange(3.0, 0.0, -1.0))
+        b = self.__base_func(0, np.arange(3.0, 0.0, -1.0))
         # form the matrix T to compute alphas
         T = np.zeros((n, n))
         T[0, 0] = T[-1, -3] = -0.5
@@ -56,15 +67,20 @@ class CubicBSpline:
         # compute the coefficients vector
         self.A = np.linalg.solve(T, Y)
         return self
-    
+
     def value(self, x):
+        """Compute value in given knot.
+
+        Keyword arguments:
+        knot -- given knot, must be in interval [x[0], ..., x[n]]
+        """
         t = (x - self.knots_x[0]) / self.h + 3
         result = 0.0
         for i in np.arange(0, len(self.A)):
-            result += self.A[i] * np.sum(self.base_func(i, [t]))
+            result += self.A[i] * np.sum(self.__base_func(i, [t]))
         return result
 
-    
+
 if __name__ == "__main__":
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)
