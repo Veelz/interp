@@ -1,5 +1,9 @@
 ## interpolation
 Using:  
+Import the modules  
+```
+from interp import *  
+```
 Create interpolator instance and call ``` fit ``` method  
 ```
 spline = Spline().fit(knots, values, d0, dn)
