@@ -17,3 +17,10 @@ To obtain interpolation value call ```value```
 f = spline.value(x)
 ```  
 ```x``` is number between ```knots[0]``` and ```knots[-1]```  
+## dependencies  
+- > python3.5  
+- > numpy1.15  
+## GUI  
+GUI.py requires:  
+- matplotlib3.0.0  
+- tkinter  
