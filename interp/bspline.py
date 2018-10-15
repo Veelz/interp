@@ -48,7 +48,7 @@ class CubicBSpline:
         dn -- derivative in knots[n]
         """
         self.knots_x = knots
-        self.h = self.knots_x[1] - self.knots[0]
+        self.h = self.knots_x[1] - self.knots_x[0]
         # expand knots with additional knots.
         n = len(knots) + 2
         # coefficients vector in knots
