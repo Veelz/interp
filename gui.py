@@ -12,6 +12,8 @@ import tkinter.filedialog
 import tkinter.ttk
 
 import csv
+import time
+
 import numpy as np
 from interp.spline import Spline
 from interp.bspline import CubicBSpline
@@ -22,12 +24,15 @@ class Preferences(tkinter.Frame):
     def __init__(self, master):
         tkinter.Frame.__init__(self, master=master)
         self.paramVar = tkinter.IntVar(master=master)
+        self.delimVar = tkinter.StringVar(master=master)
 
         self.leftFrame = tkinter.Frame(master)
         self.rightFrame = tkinter.Frame(master)
+        self.popupLabel = tkinter.Label(self.leftFrame, text='Разделитель csv', wraplength=300)
+        self.popupMenu = tkinter.OptionMenu(self.leftFrame, self.delimVar, *{' ', ';', ','})
+        self.delimVar.set(' ')
         self.openFileBtn = tkinter.Button(self.leftFrame, text='Открыть файл', command=self.load_file)
         self.fileLabel = tkinter.Label(self.leftFrame, text='Файл не загружен', wraplength=300)
-
         # parameter widget frame
         self.paramFrame = tkinter.Frame(self.leftFrame)
         self.paramLabel = tkinter.Label(self.paramFrame, text='Параметры')
@@ -44,6 +49,7 @@ class Preferences(tkinter.Frame):
 
         # calculated values table's frame
         self.tableFrame = tkinter.Frame(self.leftFrame)
+        self.timeLabel = tkinter.Label(self.tableFrame, text='Время расчета коэффициентов')
         self.tableTree = tkinter.ttk.Treeview(self.tableFrame, columns=('value', 'type'))
         self.tableTree.heading('#0', text='X')
         self.tableTree.heading('value', text='Y')
@@ -58,6 +64,8 @@ class Preferences(tkinter.Frame):
         self.rightFrame.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True)
         self.leftFrame.pack(side=tkinter.LEFT, padx=10, pady=10)
         # pack into left frame
+        self.popupLabel.pack(side=tkinter.TOP)
+        self.popupMenu.pack(side=tkinter.TOP)
         self.openFileBtn.pack(side=tkinter.TOP)
         self.fileLabel.pack(side=tkinter.TOP)
         self.paramFrame.pack(side=tkinter.TOP, pady=10)
@@ -69,6 +77,7 @@ class Preferences(tkinter.Frame):
         self.paramRadiobtnBSpl.pack()
         self.paramComputeBtn.pack()
         # pack into frame table's widgets
+        self.timeLabel.pack()
         self.tableTree.pack()
         self.tableAddBtn.pack()
         # plots
@@ -88,13 +97,15 @@ class Preferences(tkinter.Frame):
         self.d = [0, 0]
         csvfile = tkinter.filedialog.askopenfile()
         if csvfile is not None:
-            reader = csv.DictReader(csvfile, delimiter=' ', fieldnames=('knot', 'value'))
+            reader = csv.DictReader(csvfile, delimiter=self.delimVar.get(), fieldnames=('knot', 'value'))
             for row in reader:
                 self.knots.append(float(row['knot']))
                 self.values.append(float(row['value']))
             self.paramComputeBtn.config(state=tkinter.NORMAL)
             self.tableAddBtn.config(state=tkinter.DISABLED)
             self.fileLabel.config(text=csvfile.name)
+        else:
+            self.fileLabel.config(text='Ошибка при открытии файла')
 
     def calculate_and_show(self):
         if self.paramVar.get() == 1:
@@ -107,7 +118,11 @@ class Preferences(tkinter.Frame):
             # bspline
             self.spl = CubicBSpline()
 
+        first_time = time.perf_counter()
         self.spl = self.spl.fit(self.knots, self.values, self.d[0], self.d[-1])
+        elapsed_time = time.perf_counter() - first_time
+        self.timeLabel.config(text='Время расчетов коэффициентов: \
+            %f с' % (elapsed_time, ))
         x_list = np.linspace(min(self.knots), max(self.knots), len(self.knots) * 10)
         y_list = [self.spl.value(x) for x in x_list]
         self.tableAddBtn.config(state=tkinter.NORMAL)
@@ -131,10 +146,7 @@ class Preferences(tkinter.Frame):
             self.tableTree.insert('', 0, text=str(x), values=(str(y), t))
 
 
-def main():
+if __name__ == '__main__':
     app = tkinter.Tk()
     Preferences(app)
     app.mainloop()
-
-if __name__ == '__main__':
-    main()

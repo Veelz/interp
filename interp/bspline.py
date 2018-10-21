@@ -15,7 +15,7 @@ class CubicBSpline:
             [1, -3, 3, -1]
         ])
         # normalized knots
-        self.knots = np.arange(0.0, 4.1)
+        self.knots = np.linspace(0.0, 4.0, 5)
 
     def b_spline_value(self, t):
         """Calculate b-spline value in point t
@@ -74,6 +74,8 @@ class CubicBSpline:
         Keyword arguments:
         knot -- given knot, must be in interval [x[0], ..., x[n]]
         """
+        if (x < self.knots_x[0]) or (x > self.knots_x[-1]):
+            return None
         t = (x - self.knots_x[0]) / self.h + 3
         result = 0.0
         for i in np.arange(0, len(self.A)):
