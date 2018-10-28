@@ -3,7 +3,7 @@
 
 import numpy as np
 from numpy import pi
-import matplotlib.pyplot as plt
+import TDMAsolver
 
 
 class Bezier:
@@ -23,20 +23,25 @@ class Bezier:
         self.h = knots[1] - knots[0]
         self.n = len(knots)
 
-        # form the matrix P to compute derivatives d[1], ..., d[n-1]
-        vec = [1.0, 4.0, 1.0]
-        P = np.zeros((self.n, self.n))
-        P[0, 0] = P[-1, -1] = 1.0
-        for i in range(1, self.n - 1):
-            P[i][i - 1 : i + 2] = vec
+        # form the tridiagonal matrix to compute derivatives d[1], ..., d[n-1]
+        # below diagonal 
+        a = [1.0] * (self.n - 1)
+        a[-1] = 0.0
+        # main diagonal
+        b = [4.0] * self.n
+        b[0] = b[-1] = 1.0
+        # above diagonal
+        c = [1.0] * (self.n - 1)
+        c[0] = 0.0
+
         # form the known-values vector Y
         Y = np.zeros((self.n))
         Y[0] = d0
         Y[1 : self.n - 1] = [3.0 * (values[i + 2] - values[i]) for i in range(self.n - 2)]
         Y[self.n - 1] = dn
 
-        # solve the linear system to find the derivatives vector D
-        D = np.linalg.solve(P, Y)
+        # compute the derivatives vector D with Tridiagonal Matrix Algorithm
+        D = TDMAsolver.TDMAsolver(a, b, c, Y)
 
         # Control Points
         self.T = np.zeros((self.n, 4))
@@ -66,6 +71,8 @@ class Bezier:
         return t_i.dot(self.T[i])
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)
     d = np.divide(1, (knots + 1)) + np.sin(knots) + knots * np.cos(knots)

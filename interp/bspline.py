@@ -3,7 +3,6 @@
 
 import numpy as np
 from numpy import pi
-import matplotlib.pyplot as plt
 
 
 class CubicBSpline:
@@ -84,6 +83,8 @@ class CubicBSpline:
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)
     d = np.divide(1, (knots + 1)) + np.sin(knots) + knots * np.cos(knots)

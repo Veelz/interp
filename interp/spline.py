@@ -3,8 +3,7 @@
 
 import numpy as np
 from numpy import pi
-import matplotlib.pyplot as plt
-
+import TDMAsolver
 
 class Spline:
     def __init__(self):
@@ -24,21 +23,23 @@ class Spline:
         self.values = np.array(values)
         h = knots[1] - knots[0]
 
-        # form the matrix T to compute derivatives d[1], ..., d[n-1]
-        vec = [1.0, 4.0, 1.0]
-        T = np.zeros((self.n, self.n))
-        T[0, 0] = T[self.n - 1, self.n - 1] = 1.0
-        for i in range(1, self.n - 1):
-            T[i][i - 1 : i + 2] = vec
-
+        # form the tridiagonal matrix to compute derivatives d[1], ..., d[n-1]
+        # below diagonal 
+        a = [1.0] * (self.n - 1)
+        a[-1] = 0.0
+        # main diagonal
+        b = [4.0] * self.n
+        b[0] = b[-1] = 1.0
+        # above diagonal
+        c = [1.0] * (self.n - 1)
+        c[0] = 0.0
         # form the known-values vector Y
         Y = np.zeros((self.n))
         Y[0] = d0
         Y[1 : self.n - 1] = [3.0 / h * (self.values[i + 2] - self.values[i]) for i in range(self.n - 2)]
         Y[self.n - 1] = dn
-
-        # solve the linear system to find the derivatives vector D
-        D = np.linalg.solve(T, Y)
+        # compute the derivatives vector D with Tridiagonal Matrix Algorithm
+        D = TDMAsolver.TDMAsolver(a, b, c, Y)
         # compute the coefficients in matrix form
         s = np.array([
             [1.0, 0, 0, 0],
@@ -72,6 +73,8 @@ class Spline:
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)
     d = np.divide(1, (knots + 1)) + np.sin(knots) + knots * np.cos(knots)
