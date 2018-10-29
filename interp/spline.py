@@ -3,7 +3,8 @@
 
 import numpy as np
 from numpy import pi
-import TDMAsolver
+if __name__ != '__main__':
+    from .TDMAsolver import TDMAsolver
 
 class Spline:
     def __init__(self):
@@ -39,7 +40,7 @@ class Spline:
         Y[1 : self.n - 1] = [3.0 / h * (self.values[i + 2] - self.values[i]) for i in range(self.n - 2)]
         Y[self.n - 1] = dn
         # compute the derivatives vector D with Tridiagonal Matrix Algorithm
-        D = TDMAsolver.TDMAsolver(a, b, c, Y)
+        D = TDMAsolver(a, b, c, Y)
         # compute the coefficients in matrix form
         s = np.array([
             [1.0, 0, 0, 0],
@@ -74,6 +75,7 @@ class Spline:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    from TDMAsolver import TDMAsolver
 
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)

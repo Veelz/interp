@@ -3,7 +3,8 @@
 
 import numpy as np
 from numpy import pi
-import TDMAsolver
+if __name__ != '__main__':
+    from .TDMAsolver import TDMAsolver
 
 
 class Bezier:
@@ -41,7 +42,7 @@ class Bezier:
         Y[self.n - 1] = dn
 
         # compute the derivatives vector D with Tridiagonal Matrix Algorithm
-        D = TDMAsolver.TDMAsolver(a, b, c, Y)
+        D = TDMAsolver(a, b, c, Y)
 
         # Control Points
         self.T = np.zeros((self.n, 4))
@@ -72,6 +73,7 @@ class Bezier:
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
+    from TDMAsolver import TDMAsolver
 
     knots = np.arange(0.0, 8 * pi + 0.1, pi / 4)
     values = knots * np.sin(knots) + np.log(knots + 1)
