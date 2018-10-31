@@ -45,12 +45,12 @@ class Bezier:
         D = TDMAsolver(a, b, c, Y)
 
         # Control Points
-        self.T = np.zeros((self.n, 4))
+        self.A = np.zeros((self.n, 4))
         for i in range(self.n - 1):
-            self.T[i][0] = values[i]
-            self.T[i][1] = D[i] + 3 * values[i]
-            self.T[i][2] = 3 * values[i + 1] - D[i + 1]
-            self.T[i][3] = values[i + 1]
+            self.A[i][0] = values[i]
+            self.A[i][1] = D[i] + 3 * values[i]
+            self.A[i][2] = 3 * values[i + 1] - D[i + 1]
+            self.A[i][3] = values[i + 1]
         return self
 
     def value(self, x):
@@ -69,7 +69,7 @@ class Bezier:
             (1 - t) * (t ** 2),
             t ** 3
         ])
-        return t_i.dot(self.T[i])
+        return t_i.dot(self.A[i])
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt

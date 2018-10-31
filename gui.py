@@ -44,8 +44,17 @@ class Preferences(tkinter.Frame):
         self.paramRadiobtnBSpl = tkinter.Radiobutton(
             self.paramFrame, text='Куб. В-сплайн', variable=self.paramVar, value=3)
         self.paramVar.set(1)
+        # derivatives choice
+        self.DFirstVar = tkinter.StringVar(master=master, value='0.0')
+        self.DSecondVar = tkinter.StringVar(master=master, value='0.0')
+        self.paramDFirstLabel = tkinter.Label(self.paramFrame, text='Производная слева')
+        self.paramDFirstEntry = tkinter.Entry(self.paramFrame, textvariable=self.DFirstVar)
+        self.paramDSecondLabel = tkinter.Label(self.paramFrame, text='Производная справа')
+        self.paramDSecondEntry = tkinter.Entry(self.paramFrame, textvariable=self.DSecondVar)
         self.paramComputeBtn = tkinter.Button(
             self.paramFrame, text='Построить', command=self.calculate_and_show, state=tkinter.DISABLED)
+        self.paramShowCfBtn = tkinter.Button(
+            self.paramFrame, text='Коэффициенты', command=self.show_coefficient, state=tkinter.DISABLED)
 
         # calculated values table's frame
         self.tableFrame = tkinter.Frame(self.leftFrame)
@@ -75,7 +84,12 @@ class Preferences(tkinter.Frame):
         self.paramRadiobtnSpline.pack()
         self.paramRadiobtnBezier.pack()
         self.paramRadiobtnBSpl.pack()
+        self.paramDFirstLabel.pack()
+        self.paramDFirstEntry.pack()
+        self.paramDSecondLabel.pack()
+        self.paramDSecondEntry.pack()
         self.paramComputeBtn.pack()
+        self.paramShowCfBtn.pack()
         # pack into frame table's widgets
         self.timeLabel.pack()
         self.tableTree.pack()
@@ -94,7 +108,7 @@ class Preferences(tkinter.Frame):
     def load_file(self):
         self.knots = []
         self.values = []
-        self.d = [0, 0]
+
         csvfile = tkinter.filedialog.askopenfile()
         if csvfile is not None:
             reader = csv.DictReader(csvfile, delimiter=self.delimVar.get(), fieldnames=('knot', 'value'))
@@ -108,6 +122,10 @@ class Preferences(tkinter.Frame):
             self.fileLabel.config(text='Ошибка при открытии файла')
 
     def calculate_and_show(self):
+        self.d = [
+            float(self.paramDFirstEntry.get()), 
+            float(self.paramDSecondEntry.get()),
+        ]
         if self.paramVar.get() == 1:
             # spline
             self.spl = Spline()
@@ -125,6 +143,7 @@ class Preferences(tkinter.Frame):
             %f с' % (elapsed_time, ))
         x_list = np.linspace(min(self.knots), max(self.knots), len(self.knots) * 10)
         y_list = [self.spl.value(x) for x in x_list]
+        self.paramShowCfBtn.config(state=tkinter.NORMAL)
         self.tableAddBtn.config(state=tkinter.NORMAL)
         self.ax.clear()
         self.ax.plot(x_list, y_list)
@@ -145,6 +164,17 @@ class Preferences(tkinter.Frame):
                 t = '???'
             self.tableTree.insert('', 0, text=str(x), values=(str(y), t))
 
+    def show_coefficient(self):
+        with tkinter.filedialog.asksaveasfile() as file:
+            if isinstance(self.spl, Spline):
+                t = 'Cubic spline'
+            elif isinstance(self.spl, Bezier):
+                t = 'Bezier'
+            elif isinstance(self.spl, CubicBSpline):
+                t = 'Cubic B Spline'
+            x = self.spl.A
+            np.savetxt(fname=file.name, X=x, fmt='%10.5f', header=t)
+        
 
 if __name__ == '__main__':
     app = tkinter.Tk()
