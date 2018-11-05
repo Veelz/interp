@@ -25,11 +25,11 @@ class CubicBSpline:
             return 0.0
         else:
             i = [j for j in range(len(self.knots)-1) if (t >= self.knots[j] and t < self.knots[j + 1])][0]
-            vec = np.array([1, t, t ** 2, t ** 3])
+            vec = [1.0, t, t * t, t * t * t]
             return self.T[i].dot(vec)
 
     def __base_func0(self, points):
-        return np.array([self.b_spline_value(x) for x in points])
+        return [self.b_spline_value(x) for x in points]
 
     def __base_func(self, i, points):
         if i == 0:
@@ -78,7 +78,13 @@ class CubicBSpline:
         t = (x - self.knots_x[0]) / self.h + 3
         result = 0.0
         for i in np.arange(0, len(self.A)):
-            result += self.A[i] * np.sum(self.__base_func(i, [t]))
+            if i == 0:
+                # first section
+                value = self.b_spline_value(t)
+            else:
+                # other sections are same as first one
+                value = self.b_spline_value(t - i)
+            result += self.A[i] * value
         return result
 
 

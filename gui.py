@@ -139,16 +139,22 @@ class Preferences(tkinter.Frame):
         first_time = time.perf_counter()
         self.spl = self.spl.fit(self.knots, self.values, self.d[0], self.d[-1])
         elapsed_time = time.perf_counter() - first_time
-        self.timeLabel.config(text='Время расчетов коэффициентов: \
-            %f с' % (elapsed_time, ))
-        x_list = np.linspace(min(self.knots), max(self.knots), len(self.knots) * 10)
+        x_list = np.linspace(min(self.knots), max(self.knots), len(self.knots) * 5)
+        values_time_start = time.perf_counter()
         y_list = [self.spl.value(x) for x in x_list]
+        values_time = time.perf_counter() - values_time_start
         self.paramShowCfBtn.config(state=tkinter.NORMAL)
         self.tableAddBtn.config(state=tkinter.NORMAL)
         self.ax.clear()
+        draw_time_start = time.perf_counter()
         self.ax.plot(x_list, y_list)
         self.ax.plot(self.knots, self.values, 'bo')
         self.canvas.draw()
+        draw_time = time.perf_counter() - draw_time_start
+        self.timeLabel.config(text='Время расчетов коэффициентов: %f с\n \
+            Время расчета значений: %f с\n \
+            Отрисовка графика: %f с' % (elapsed_time, values_time, draw_time))
+
 
     def calculate_at(self):
         x = tkinter.simpledialog.askfloat("title", "x:")
