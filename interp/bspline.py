@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 #-*- coding: UTF-8 -*-
 
+import math
 import numpy as np
 from numpy import pi
 
@@ -76,14 +77,11 @@ class CubicBSpline:
         if (x < self.knots_x[0]) or (x > self.knots_x[-1]):
             return None
         t = (x - self.knots_x[0]) / self.h + 3
+        start = math.floor(t) - 3
+        end = math.ceil(t)
         result = 0.0
-        for i in np.arange(0, len(self.A)):
-            if i == 0:
-                # first section
-                value = self.b_spline_value(t)
-            else:
-                # other sections are same as first one
-                value = self.b_spline_value(t - i)
+        for i in np.arange(start, end):
+            value = self.b_spline_value(t - i)
             result += self.A[i] * value
         return result
 
