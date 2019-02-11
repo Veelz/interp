@@ -3,8 +3,6 @@
 
 import numpy as np
 from numpy import pi
-if __name__ != '__main__':
-    from .TDMAsolver import TDMAsolver
 
 class Spline:
     def __init__(self):
@@ -23,24 +21,13 @@ class Spline:
         self.n = len(knots)
         self.values = np.array(values)
         h = knots[1] - knots[0]
-
-        # form the tridiagonal matrix to compute derivatives d[1], ..., d[n-1]
-        # below diagonal 
-        a = [1.0] * (self.n - 1)
-        a[-1] = 0.0
-        # main diagonal
-        b = [4.0] * self.n
-        b[0] = b[-1] = 1.0
-        # above diagonal
-        c = [1.0] * (self.n - 1)
-        c[0] = 0.0
         # form the known-values vector Y
         Y = np.zeros((self.n))
         Y[0] = d0
         Y[1 : self.n - 1] = [3.0 / h * (self.values[i + 2] - self.values[i]) for i in range(self.n - 2)]
         Y[self.n - 1] = dn
         # compute the derivatives vector D with Tridiagonal Matrix Algorithm
-        D = TDMAsolver(a, b, c, Y)
+        D = self.__solve(Y)
         # compute the coefficients in matrix form
         s = np.array([
             [1.0, 0, 0, 0],
@@ -71,6 +58,25 @@ class Spline:
             (knot - self.knots[i]) ** 3,
         ])
         return x_i.dot(self.A[i])
+
+    def __solve(self, d):
+        n = len(d)          # eq number
+        x = np.zeros((n, )) # result
+        alpha = np.zeros((n, ))
+        beta = np.zeros((n, ))
+        alpha[1] = 0
+        beta[1] = d[0]
+        # implicit: a = 1, b = 4, c = 1
+        for i in range(2, n):
+            alpha[i] = -1 / (alpha[i - 1] + 4)
+            beta[i] = (d[i - 1] - beta[i - 1]) / (alpha[i - 1] + 4)
+        # explicit eval of last component
+        x[-1] = d[-1]
+        for i in reversed(range(0, n - 1)):
+            x[i] = alpha[i + 1] * x[i + 1] + beta[i + 1]
+
+        return x
+
 
 
 if __name__ == "__main__":

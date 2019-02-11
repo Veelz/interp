@@ -51,21 +51,13 @@ class CubicBSpline:
         self.h = self.knots_x[1] - self.knots_x[0]
         # expand knots with additional knots.
         n = len(knots) + 2
-        # coefficients vector in knots
-        b = self.__base_func(0, np.arange(3.0, 0.0, -1.0))
-        # form the matrix T to compute alphas
-        T = np.zeros((n, n))
-        T[0, 0] = T[-1, -3] = -0.5
-        T[0, 2] = T[-1, -1] = 0.5
-        for i in range(1, n - 1):
-            T[i][i - 1 : i + 2] = b
         # known-value vector
         Y = np.zeros((n))
         Y[0] = d0
         Y[1 : n - 1] = values[0 : n - 2]
         Y[n - 1] = dn
         # compute the coefficients vector
-        self.A = np.linalg.solve(T, Y)
+        self.A = self.__solve(Y)
         return self
 
     def value(self, x):
@@ -84,6 +76,24 @@ class CubicBSpline:
             value = self.b_spline_value(t - i)
             result += self.A[i] * value
         return result
+
+    def __solve(self, d):
+        n = len(d)          # eq number
+        x = np.zeros((n, )) # result
+        alpha = np.zeros((n, ))
+        beta = np.zeros((n, ))
+        alpha[1] = - 1 / 3
+        beta[1] = -d[0] + 3 * d[1]
+        # implicit: a = 1, b = 4, c = 1
+        for i in range(2, n):
+            alpha[i] = -1 / (alpha[i - 1] + 4)
+            beta[i] = (6 * d[i - 1] - beta[i - 1]) / (alpha[i - 1] + 4)
+        # explicit eval of last component
+        x[-1] = (d[-1] + 3 * d[-2] - 2 * beta[-1]) / (1 + 2 * alpha[-1])
+        for i in reversed(range(0, n - 1)):
+            x[i] = alpha[i + 1] * x[i + 1] + beta[i + 1]
+
+        return x
 
 
 if __name__ == "__main__":
