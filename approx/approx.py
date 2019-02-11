@@ -1,6 +1,5 @@
 import math
 import numpy as np
-import matplotlib.pyplot as plt
 
 class CubicBSpline:
     def __init__(self, points):
@@ -12,9 +11,7 @@ class CubicBSpline:
         self.n = len(self.points) - self.deg - 1
 
     def b_spline_value(self, id, x):
-        """Calculate b-spline valueue in point x
-
-        x -- normalized point
+        """Calculate b-spline value in point x in section[id]
         """
         if (x < self.points[id] or x > self.points[id + self.deg + 1]):
             return 0
@@ -47,15 +44,19 @@ class CubicBSpline:
         b = np.zeros((self.n, ))
         for j in range(self.n):
             b[j] = sum([values[i] * self.b_spline_value(j, knots[i]) for i in range(self.m)])
-        print(A)
-        print(b)
-        self.alpha = np.linalg.solve(A, b)
+        # print(A)
+        # print(b)
+        self.alpha = self.__solve(A, b)
         return self
 
     def value(self, x):
         if (x < self.points[0] or x > self.points[-1]):
             return 0
-        return sum([self.alpha[i] * self.b_spline_value(i, x) for i in range(self.n)])
+        # return sum([self.alpha[i] * self.b_spline_value(i, x) for i in range(self.n)])
+        j = 0
+        while (j < self.n) and (x >= self.points[j]):
+            j += 1
+        return sum([self.alpha[i] * self.b_spline_value(i, x) for i in range(j - self.deg - 1, j)])
 
     def basis(self):
         knots = np.linspace(self.points[0], self.points[-1], 10 * (len(self.points) - self.deg))
@@ -63,3 +64,9 @@ class CubicBSpline:
         for i in range(len(self.points) - self.deg - 1):
             val.append([self.b_spline_value(i, knot) for knot in knots])
         return knots, val
+
+    def __solve(self, A, b):
+        """ solves linear matrix equation with coefficient matrix A and values b
+        """
+        return np.linalg.solve(A, b)
+

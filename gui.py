@@ -18,7 +18,7 @@ import numpy as np
 from interp.spline import Spline
 from interp.bspline import CubicBSpline
 from interp.bezier import Bezier
-
+from approx.approx import CubicBSpline as Approximator
 
 class Preferences(tkinter.Frame):
     def __init__(self, master):
@@ -26,8 +26,15 @@ class Preferences(tkinter.Frame):
         self.paramVar = tkinter.IntVar(master=master)
         self.delimVar = tkinter.StringVar(master=master)
 
-        self.leftFrame = tkinter.Frame(master)
-        self.rightFrame = tkinter.Frame(master)
+        self.leftFrame = tkinter.Frame(master=master)
+        # tabs
+        self.notebook = tkinter.ttk.Notebook(master=master)
+        self.interpFrame = tkinter.Frame(self.notebook)
+        self.approxFrame = tkinter.Frame(self.notebook)
+        self.notebook.add(self.interpFrame, text='interp')
+        self.notebook.add(self.approxFrame, text='approx')
+        self.notebook.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True)
+
         self.popupLabel = tkinter.Label(self.leftFrame, text='Разделитель csv', wraplength=300)
         self.popupMenu = tkinter.OptionMenu(self.leftFrame, self.delimVar, *{' ', ';', ','})
         self.delimVar.set(' ')
@@ -70,8 +77,9 @@ class Preferences(tkinter.Frame):
             self.tableFrame, text='Добавить значение', command=self.calculate_at, state=tkinter.DISABLED)
 
         # pack into master's widget
-        self.rightFrame.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True)
+        # self.interpFrame.pack(side=tkinter.RIGHT, fill=tkinter.BOTH, expand=True)
         self.leftFrame.pack(side=tkinter.LEFT, padx=10, pady=10)
+
         # pack into left frame
         self.popupLabel.pack(side=tkinter.TOP)
         self.popupMenu.pack(side=tkinter.TOP)
@@ -94,16 +102,26 @@ class Preferences(tkinter.Frame):
         self.timeLabel.pack()
         self.tableTree.pack()
         self.tableAddBtn.pack()
-        # plots
+        # interp plot
         self.fig = Figure(figsize=(5, 4), dpi=100)
         self.ax = self.fig.add_subplot(111)
         self.ax.plot([1, 2, 3, 4, 5, 6, 7, 8], [3, 1, 7, 3, 5, 9, 10, 3])
-        self.canvas = FigureCanvasTkAgg(self.fig, self.rightFrame)
+        self.canvas = FigureCanvasTkAgg(self.fig, self.interpFrame)
         self.canvas.draw()
         self.canvas.get_tk_widget().pack(fill=tkinter.BOTH, expand=True)
-        self.toolbar = NavigationToolbar2Tk(self.canvas, self.rightFrame)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.interpFrame)
         self.toolbar.update()
         self.canvas.get_tk_widget().pack()
+        # approx plot
+        self.approxFig = Figure(figsize=(5, 4), dpi=100)
+        self.approxAx = self.approxFig.add_subplot(111)
+        self.approxCanvas = FigureCanvasTkAgg(self.approxFig, self.approxFrame)
+        self.approxCanvas.draw()
+        self.approxCanvas.get_tk_widget().pack(fill=tkinter.BOTH, expand=True)
+        self.approxToolbar = NavigationToolbar2Tk(self.approxCanvas, self.approxFrame)
+        self.approxToolbar.update()
+        self.approxCanvas.get_tk_widget().pack()
+
 
     def load_file(self):
         self.knots = []
@@ -122,6 +140,38 @@ class Preferences(tkinter.Frame):
             self.fileLabel.config(text='Ошибка при открытии файла')
 
     def calculate_and_show(self):
+        print(self.notebook.index('current'))
+        if self.notebook.index('current') == 0:
+            self.calculate_and_show_interp()
+        else:
+            self.calculate_and_show_approx()
+
+    def calculate_and_show_approx(self):
+        points = np.linspace(min(self.knots), max(self.knots), len(self.knots) / 5)
+        spline = Approximator(points)
+        
+        first_time = time.perf_counter()
+        spline = spline.fit(self.knots, self.values)
+        elapsed_time = time.perf_counter() - first_time
+        
+        x_list = np.linspace(min(self.knots), max(self.knots), len(self.knots) * 5)
+        values_time_start = time.perf_counter()
+        y_list = [spline.value(x) for x in x_list]
+        values_time = time.perf_counter() - values_time_start
+        self.paramShowCfBtn.config(state=tkinter.NORMAL)
+        self.tableAddBtn.config(state=tkinter.NORMAL)
+        self.approxAx.clear()
+        draw_time_start = time.perf_counter()
+        self.approxAx.plot(x_list, y_list)
+        self.approxAx.plot(self.knots, self.values, 'bo')
+        self.approxCanvas.draw()
+        draw_time = time.perf_counter() - draw_time_start
+        self.timeLabel.config(text='Время расчетов коэффициентов: %f с\n \
+            Время расчета значений: %f с\n \
+            Отрисовка графика: %f с' % (elapsed_time, values_time, draw_time))
+
+
+    def calculate_and_show_interp(self):
         self.d = [
             float(self.paramDFirstEntry.get()), 
             float(self.paramDSecondEntry.get()),
@@ -149,6 +199,9 @@ class Preferences(tkinter.Frame):
         draw_time_start = time.perf_counter()
         self.ax.plot(x_list, y_list)
         self.ax.plot(self.knots, self.values, 'bo')
+        if isinstance(self.spl, Bezier):
+            for lst in self.spl.A:
+                self.ax.plot(lst, [self.spl.value(x) for x in lst], 'ro')
         self.canvas.draw()
         draw_time = time.perf_counter() - draw_time_start
         self.timeLabel.config(text='Время расчетов коэффициентов: %f с\n \
